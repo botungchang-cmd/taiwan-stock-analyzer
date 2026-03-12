@@ -11,10 +11,12 @@ venv/
 dist/
 build/
 
-# 本地資料（不提交到 Git，由 GitHub Actions 生成）
+# 本地資料
 data/
-# docs/data 由 GitHub Actions 管理，但保留目錄結構
-!docs/data/.gitkeep
+
+# 允許上傳 docs/data，因為 GitHub Actions 需要將生成的 JSON/CSV 資料存入此處以供網頁讀取
+!docs/data/
+!docs/data/*
 
 # 環境變數
 .env
