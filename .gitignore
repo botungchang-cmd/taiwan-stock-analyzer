@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# 本地資料（不提交到 Git，由 GitHub Actions 生成）
+data/
+# docs/data 由 GitHub Actions 管理，但保留目錄結構
+!docs/data/.gitkeep
+
+# 環境變數
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 日誌
+*.log

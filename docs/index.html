@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>台股分析系統</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css" />
+  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css" />
+  <!-- jQuery & DataTables JS -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+  <script src="https://cdn.datatables.net/fixedheader/3.4.0/js/dataTables.fixedHeader.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.datatables.net/fixedheader/3.4.0/css/fixedHeader.dataTables.min.css" />
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <h1>📈 台股分析系統</h1>
+      <p class="subtitle">基於 FinMind API 的台股 EPS、本益比與推估股價分析</p>
+    </div>
+  </header>
+
+  <main>
+    <section class="controls">
+      <div class="control-group">
+        <label for="datePicker">選擇日期：</label>
+        <input type="date" id="datePicker" />
+        <button id="loadBtn" class="btn-primary">載入資料</button>
+        <button id="refreshBtn" class="btn-secondary">重新整理</button>
+      </div>
+      <div class="control-group">
+        <label for="industryFilter">產業篩選：</label>
+        <select id="industryFilter">
+          <option value="">全部產業</option>
+        </select>
+        <label for="searchInput">搜尋：</label>
+        <input type="text" id="searchInput" placeholder="輸入代號或名稱..." />
+      </div>
+      <div class="control-group">
+        <button id="exportCsvBtn" class="btn-export">📥 匯出 CSV</button>
+        <span id="statusMsg" class="status-msg"></span>
+      </div>
+    </section>
+
+    <section class="legend">
+      <h3>欄位說明</h3>
+      <div class="legend-grid">
+        <div class="legend-item">
+          <span class="legend-color good">綠色</span>
+          <span>報酬 &gt; 1.1（今日股價低於平均推估股價 10% 以上）</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-color warn">黃色</span>
+          <span>報酬 0.9 ~ 1.1（接近平均推估股價）</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-color bad">紅色</span>
+          <span>報酬 &lt; 0.9（今日股價高於平均推估股價 10% 以上）</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="table-section">
+      <div id="loadingIndicator" class="loading hidden">
+        <div class="spinner"></div>
+        <p>資料載入中，請稍候...</p>
+      </div>
+      <div id="errorMsg" class="error-msg hidden"></div>
+      <div id="tableWrapper" class="hidden">
+        <div class="table-info">
+          <span id="dataDateLabel"></span>
+          <span id="stockCountLabel"></span>
+        </div>
+        <div class="table-scroll">
+          <table id="stockTable" class="display nowrap" style="width:100%">
+            <thead>
+              <tr>
+                <th>代號</th>
+                <th>名稱</th>
+                <th>產業別</th>
+                <th>前一年EPS</th>
+                <th>前一年營收(億)</th>
+                <th>轉換EPS=1(億)</th>
+                <th>本年累積營收換算EPS</th>
+                <th>推估本年度營收(億)</th>
+                <th>推估本年度EPS</th>
+                <th>平均前2年本益比</th>
+                <th>前2年本益比高低差</th>
+                <th>前2年最低本益比</th>
+                <th>前2年最高本益比</th>
+                <th>推估股價最低值</th>
+                <th>推估股價最高值</th>
+                <th>推估股價平均值</th>
+                <th>今日股價</th>
+                <th>報酬</th>
+                <th>風險</th>
+                <th>加成</th>
+                <th>前兩年往後6月最高漲幅%</th>
+                <th>前兩年往後6月達最高天數</th>
+                <th>前一年往後6月最高漲幅%</th>
+                <th>前一年往後6月達最高天數</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>資料來源：<a href="https://finmindtrade.com/" target="_blank">FinMind</a> | 本系統僅供參考，不構成投資建議</p>
+    <p>最後更新：<span id="lastUpdate">-</span></p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

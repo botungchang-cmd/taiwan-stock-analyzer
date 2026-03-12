@@ -1,0 +1,77 @@
+name: 台股資料每日更新
+
+on:
+  # 每日台灣時間 14:00 執行（UTC+8，所以 UTC 06:00）
+  schedule:
+    - cron: '0 6 * * 1-5'  # 週一至週五 UTC 06:00 = 台灣時間 14:00
+
+  # 允許手動觸發
+  workflow_dispatch:
+    inputs:
+      target_date:
+        description: '指定資料日期 (YYYY-MM-DD)，留空則使用今日'
+        required: false
+        default: ''
+
+jobs:
+  fetch-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # 允許推送到 GitHub Pages
+
+    steps:
+      # 1. Checkout 程式碼
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      # 2. 設定 Python 環境
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      # 3. 安裝相依套件
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      # 4. 設定目標日期
+      - name: Set target date
+        id: set-date
+        run: |
+          if [ -n "${{ github.event.inputs.target_date }}" ]; then
+            echo "TARGET_DATE=${{ github.event.inputs.target_date }}" >> $GITHUB_ENV
+          else
+            # 台灣時間（UTC+8）
+            echo "TARGET_DATE=$(TZ='Asia/Taipei' date +%Y-%m-%d)" >> $GITHUB_ENV
+          fi
+          echo "Target date: $TARGET_DATE"
+
+      # 5. 執行資料撈取腳本
+      - name: Fetch Taiwan stock data
+        env:
+          FINMIND_USER: ${{ secrets.FINMIND_USER }}
+          FINMIND_PASS: ${{ secrets.FINMIND_PASS }}
+          TARGET_DATE: ${{ env.TARGET_DATE }}
+          OUTPUT_DIR: ${{ github.workspace }}/docs/data
+        run: |
+          python scripts/fetch_data.py
+
+      # 6. 提交並推送更新的資料
+      - name: Commit and push data
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add docs/data/
+          git diff --staged --quiet || git commit -m "chore: 更新台股資料 ${{ env.TARGET_DATE }}"
+          git push
+
+      # 7. 觸發 GitHub Pages 重新部署（如果有設定的話）
+      - name: Summary
+        run: |
+          echo "✅ 台股資料更新完成：${{ env.TARGET_DATE }}"
+          echo "📊 資料已儲存至 docs/data/"
