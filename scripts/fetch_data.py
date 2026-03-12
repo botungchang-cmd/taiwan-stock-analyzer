@@ -296,7 +296,19 @@ def process_stock(stock_id: str, stock_name: str, industry: str,
 def main():
     target_date_str = os.environ.get(
         "TARGET_DATE", datetime.now().strftime("%Y-%m-%d"))
-    target_date = datetime.strptime(target_date_str, "%Y-%m-%d")
+    
+    # 相容 YYYY-MM-DD 和 YYYYMMDD 格式
+    try:
+        if "-" in target_date_str:
+            target_date = datetime.strptime(target_date_str, "%Y-%m-%d")
+        else:
+            target_date = datetime.strptime(target_date_str, "%Y%m%d")
+            # 統一轉回 YYYY-MM-DD 格式供後續檔名使用
+            target_date_str = target_date.strftime("%Y-%m-%d")
+    except ValueError:
+        print(f"Error: Invalid date format {target_date_str}. Use YYYY-MM-DD or YYYYMMDD.")
+        sys.exit(1)
+
     print(f"[開始] 資料日期: {target_date_str}")
     print(f"[設定] 輸出目錄: {OUT_DIR}")
     print(f"[設定] API 延遲: {API_DELAY} 秒")
