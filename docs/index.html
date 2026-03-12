@@ -43,7 +43,23 @@
       </div>
       <div class="control-group">
         <button id="exportCsvBtn" class="btn-export">📥 匯出 CSV</button>
+        <button id="fetchDataBtn" class="btn-fetch" title="手動觸發資料撈取">🔄 撈取最新資料</button>
         <span id="statusMsg" class="status-msg"></span>
+      </div>
+      <div class="control-group">
+        <details class="github-token-settings">
+          <summary>⚙️ GitHub Token 設定（用於手動撈取）</summary>
+          <div class="token-form">
+            <label for="githubToken">GitHub Personal Access Token：</label>
+            <input type="password" id="githubToken" placeholder="輸入您的 GitHub Token（僅儲存在本地瀏覽器）" />
+            <button id="saveTokenBtn" class="btn-small">儲存 Token</button>
+            <button id="clearTokenBtn" class="btn-small">清除 Token</button>
+            <p class="token-help">
+              💡 <a href="https://github.com/settings/tokens" target="_blank">如何建立 Token？</a>
+              需要 <code>repo</code> 和 <code>workflow</code> 權限。Token 只儲存在您的瀏覽器，不會傳送到任何伺服器。
+            </p>
+          </div>
+        </details>
       </div>
     </section>
 
