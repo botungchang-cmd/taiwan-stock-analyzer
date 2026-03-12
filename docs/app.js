@@ -6,7 +6,8 @@
 const DATA_BASE_URL = "./data/";
 const GITHUB_OWNER = "botungchang-cmd"; // 請改為您的 GitHub 帳號
 const GITHUB_REPO = "taiwan-stock-analyzer"; // 請改為您的 Repository 名稱
-const WORKFLOW_NAME = "daily_fetch.yml"; // 工作流程檔案名稱
+const GITHUB_ACTIONS_URL = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/workflows/daily_fetch.yml`;
+
 let stockTable = null;
 let currentData = [];
 
@@ -249,102 +250,6 @@ function initIndustryFilter() {
   });
 }
 
-// ---- GitHub Token 管理 ----
-function getStoredToken() {
-  return localStorage.getItem("github_token") || "";
-}
-
-function saveToken(token) {
-  if (token) {
-    localStorage.setItem("github_token", token);
-    alert("✅ Token 已儲存到瀏覽器本地存儲");
-  }
-}
-
-function clearToken() {
-  localStorage.removeItem("github_token");
-  document.getElementById("githubToken").value = "";
-  alert("✅ Token 已清除");
-}
-
-function initTokenUI() {
-  const token = getStoredToken();
-  if (token) {
-    // 顯示已儲存的狀態（不顯示完整 Token）
-    document.getElementById("githubToken").value = "••••••••••••••••";
-    document.getElementById("githubToken").placeholder = "Token 已儲存（點擊以修改）";
-  }
-
-  document.getElementById("saveTokenBtn").addEventListener("click", () => {
-    const token = document.getElementById("githubToken").value.trim();
-    if (!token || token.startsWith("•")) {
-      alert("❌ 請輸入有效的 Token");
-      return;
-    }
-    saveToken(token);
-    document.getElementById("githubToken").value = "••••••••••••••••";
-  });
-
-  document.getElementById("clearTokenBtn").addEventListener("click", () => {
-    if (confirm("確定要清除儲存的 Token 嗎？")) {
-      clearToken();
-    }
-  });
-}
-
-// ---- 手動撈取資料 ----
-async function triggerDataFetch() {
-  const token = getStoredToken();
-  if (!token) {
-    alert("❌ 請先設定 GitHub Token\n\n1. 點擊上方的 ⚙️ GitHub Token 設定\n2. 在 GitHub 建立 Personal Access Token (https://github.com/settings/tokens)\n3. 需要 repo 和 workflow 權限\n4. 貼上 Token 並儲存");
-    return;
-  }
-
-  const btn = document.getElementById("fetchDataBtn");
-  const originalText = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = "⏳ 執行中...";
-  setStatus("⏳ 正在觸發資料撈取...");
-
-  try {
-    // 呼叫 GitHub API 觸發工作流程
-    const response = await fetch(
-      `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/workflows/${WORKFLOW_NAME}/dispatches`,
-      {
-        method: "POST",
-        headers: {
-          "Authorization": `token ${token}`,
-          "Accept": "application/vnd.github.v3+json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          "ref": "main"
-        })
-      }
-    );
-
-    if (response.status === 204) {
-      setStatus("✅ 資料撈取已啟動！請稍候 5-10 分鐘後重新整理網頁查看最新資料。");
-      alert("✅ 資料撈取工作已成功提交！\n\n預計需要 5-10 分鐘完成。\n完成後請點擊『重新整理』按鈕查看最新資料。");
-    } else if (response.status === 401) {
-      throw new Error("Token 無效或已過期，請重新設定");
-    } else if (response.status === 403) {
-      throw new Error("權限不足，請確認 Token 有 repo 和 workflow 權限");
-    } else if (response.status === 404) {
-      throw new Error("找不到工作流程，請確認 Repository 名稱和工作流程檔案名稱是否正確");
-    } else {
-      const errData = await response.json();
-      throw new Error(`API 錯誤 (${response.status}): ${errData.message || "未知錯誤"}`);
-    }
-  } catch (e) {
-    setStatus(`❌ 觸發失敗：${e.message}`);
-    alert(`❌ 觸發失敗\n\n${e.message}\n\n請確認：\n1. Token 是否有效\n2. Repository 名稱是否正確\n3. GitHub 帳號是否有權限`);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = originalText;
-  }
-}
-
 // ---- CSV 匯出（備用按鈕） ----
 function exportCSV() {
   if (!currentData || currentData.length === 0) {
@@ -372,6 +277,15 @@ function exportCSV() {
   URL.revokeObjectURL(url);
 }
 
+// ---- 手動更新資料 ----
+function openGitHubActions() {
+  setStatus("⏳ 正在開啟 GitHub Actions 頁面...");
+  setTimeout(() => {
+    window.open(GITHUB_ACTIONS_URL, '_blank');
+    setStatus("✅ 已開啟 GitHub Actions。請點擊『Run workflow』按鈕手動觸發資料更新。");
+  }, 500);
+}
+
 // ---- 事件綁定 ----
 function bindEvents() {
   document.getElementById("loadBtn").addEventListener("click", () => {
@@ -390,7 +304,7 @@ function bindEvents() {
 
   document.getElementById("exportCsvBtn").addEventListener("click", exportCSV);
 
-  document.getElementById("fetchDataBtn").addEventListener("click", triggerDataFetch);
+  document.getElementById("fetchDataBtn").addEventListener("click", openGitHubActions);
 
   // Enter 鍵觸發載入
   document.getElementById("datePicker").addEventListener("keydown", (e) => {
@@ -404,7 +318,6 @@ async function init() {
   bindEvents();
   initSearch();
   initIndustryFilter();
-  initTokenUI();
 
   // 嘗試載入可用日期清單
   const dates = await loadAvailableDates();
@@ -416,11 +329,6 @@ async function init() {
   } else {
     // 嘗試載入最新資料
     await loadStockData(getTodayStr());
-  }
-
-  // 提示使用者設定 Token
-  if (!getStoredToken()) {
-    console.log("💡 提示：若要使用『撈取最新資料』功能，請先設定 GitHub Token");
   }
 }
 
