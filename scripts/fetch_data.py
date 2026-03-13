@@ -238,12 +238,13 @@ def process_stock(stock_id: str, stock_name: str, industry: str,
         low_est  = result["用本年度推估EPS換算股價最低值"]
         high_est = result["用本年度推估EPS換算股價最高值"]
 
-        if avg_est > 0 and latest_close > 0:
-            result["報酬"] = round(avg_est / latest_close, 2)
-        if low_est > 0 and latest_close > 0:
-            result["風險"] = round(low_est / latest_close, 2)
-        if high_est > 0 and latest_close > 0:
-            result["加成"] = round(high_est / latest_close, 2)
+        if latest_close > 0:
+            if avg_est > 0:
+                result["報酬"] = round(avg_est / latest_close, 2)
+            if low_est > 0:
+                result["風險"] = round(low_est / latest_close, 2)
+            if high_est > 0:
+                result["加成"] = round(high_est / latest_close, 2)
 
         # ---- 前兩年往後 6 個月最高漲幅 ----
         date_2y = target_date - relativedelta(years=2)
